@@ -1,0 +1,45 @@
+{
+  "name": "popsimwrapper-dev",
+
+  "build": {
+    "dockerfile": "../docker/dev.Dockerfile",
+    "context": ".."
+  },
+
+  "remoteUser": "vscode",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": false,
+      "dockerComposeVersion": "v2"
+    }
+  },
+
+  "mounts": [
+    "source=popsimwrapper-config,target=/home/vscode/.config,type=volume"
+  ],
+
+  "containerEnv": {
+    "DOCKER_HOST": "unix:///var/run/docker.sock",
+    "UV_LINK_MODE": "copy",
+    "POPSIMWRAPPER_DATA": "/workspace/data",
+    "POPSIMWRAPPER_OUT": "/workspace/out"
+  },
+
+  "postCreateCommand": "bash -lc 'sudo apt update && sudo apt install -y osmium-tool && cd /workspace && (test -f pyproject.toml && uv sync || true) && uv run python -m ipykernel install --user --name popsimwrapper --display-name \"popsimwrapper (devcontainer)\"'",
+
+  "initializeCommand": "docker network inspect popsimwrapper_network >NUL 2>&1 || docker network create popsimwrapper_network >NUL 2>&1",
+
+  "runArgs": ["--network=popsimwrapper_network"],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-toolsai.jupyter"
+      ]
+    }
+  }
+}

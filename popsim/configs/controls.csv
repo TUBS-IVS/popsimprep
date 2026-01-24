@@ -1,0 +1,11 @@
+target,geography,seed_table,importance,control_field,expression
+numberOfHouseholds_ZENSUS100m_target,ZENSUS100m,households,1000,numberOfHouseholds_ZENSUS100m,(households.H_GEW > 0) & (households.H_GEW < np.inf)
+Unter10_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,Unter10_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER < 10)
+a10bis19_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,a10bis19_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER > 9)&(persons.HP_ALTER <20)
+a20bis29_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,a20bis29_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER > 19)&(persons.HP_ALTER < 30)
+a30bis39_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,a30bis39_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER > 29)&(persons.HP_ALTER < 40)
+a40bis49_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,a40bis49_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER > 39)&(persons.HP_ALTER < 50)
+a50bis59_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,a50bis59_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER > 49)&(persons.HP_ALTER < 60)
+a60bis69_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,a60bis69_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER > 59)&(persons.HP_ALTER < 70)
+a70bis79_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,a70bis79_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER > 69)&(persons.HP_ALTER < 80)
+a80undaelter_Zensus2022_Alter_in_10er-Jahresgruppen_100m-Gitter_ZENSUS100m_target,ZENSUS100m,persons,1000,a80undaelter_Zensus2022_Alter_in_10er-Jahresgruppen_adj-Gitter_ZENSUS100m,(persons.HP_ALTER > 79)

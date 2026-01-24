@@ -1,0 +1,37 @@
+# Data files
+popsim/data/
+popsim/output/
+popsim/_raw_data/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Large/binary files
+*.h5
+*.hdf5
+
+# Logs
+*.log
+
+# Temporary files
+*~
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
