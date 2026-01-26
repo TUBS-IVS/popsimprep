@@ -1,1 +1,26 @@
-{"lowest_geography_name": "ZENSUS100m", "output_everything": false, "seed_geography": "STAAT", "filter_mid": false, "kernwo": 2, "regiostar17": [121, 123, 124], "geo_names": ["ZENSUS100m", "STAAT", "WELT"]}
+{
+  "geopackage_path": "data/outlineBS.gpkg",
+  "census_100m_id_col": "GITTER_ID_100m",
+  "census_1km_id_col": "GITTER_ID_1km",
+  "household_column": "Insgesamt_Haushalte_Groesse_des_privaten_Haushalts_100m-Gitter_adj",
+  "mid_households_path": "data/MiD2023_Haushalte.csv",
+  "mid_persons_path": "data/MiD2023_Personen.csv",
+  "output_everything": false,
+  "seed_geography": "STAAT",
+  "kernwo": [
+    1,
+    2,
+    3
+  ],
+  "regiostar17": null,
+  "intermediate_sep": ";",
+  "num_100m_cells": 5147,
+  "num_1km_cells": 165,
+  "geo_names": [
+    "ZENSUS100m",
+    "ZENSUS1km",
+    "STAAT",
+    "WELT"
+  ],
+  "total_hh_control": "numberOfHouseholds_ZENSUS100m_target"
+}

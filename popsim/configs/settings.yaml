@@ -8,6 +8,7 @@ data_dir: data
 geographies:
 - WELT
 - STAAT
+- ZENSUS1km
 - ZENSUS100m
 household_id_col: H_ID
 household_weight_col: H_GEW
@@ -21,6 +22,8 @@ input_table_list:
   tablename: geo_cross_walk
 - filename: control_totals_ZENSUS100m.csv
   tablename: ZENSUS100m_control_data
+- filename: control_totals_ZENSUS1km.csv
+  tablename: ZENSUS1km_control_data
 - filename: control_totals_STAAT.csv
   tablename: STAAT_control_data
 - filename: control_totals_WELT.csv
@@ -33,6 +36,7 @@ models:
 - meta_control_factoring
 - final_seed_balancing
 - integerize_final_seed_weights
+- sub_balancing.geography=ZENSUS1km
 - sub_balancing.geography=ZENSUS100m
 - expand_households
 - write_data_dictionary
@@ -53,9 +57,10 @@ output_tables:
   tables:
   - expanded_household_ids
   - summary_ZENSUS100m
+  - summary_ZENSUS1km
   - summary_STAAT
   - summary_WELT
   - summary_ZENSUS100m_STAAT
 resume_after: null
 seed_geography: STAAT
-total_hh_control: numberOfHouseholds_ZENSUS100m_target
+total_hh_control: Insgesamt_Haushalte_Groesse_des_privaten_Haushalts_100m_Gitter_adj_ZENSUS100m_target

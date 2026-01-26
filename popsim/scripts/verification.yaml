@@ -577,6 +577,7 @@ geographies: data/geo_cross_walk.csv
 group_geographies:
 - WELT
 - STAAT
+- ZENSUS1km
 - ZENSUS100m
 popsim_dir: ../
 region: 4_Niedersachsen_00
@@ -588,6 +589,7 @@ seed_cols:
 seed_households: data/seed_households.csv
 summaries:
 - output/final_summary_ZENSUS100m.csv
+- output/final_summary_ZENSUS1km.csv
 - output/final_summary_STAAT.csv
 - output/final_summary_WELT.csv
 - output/final_summary_ZENSUS100m_STAAT.csv
