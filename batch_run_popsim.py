@@ -5,11 +5,13 @@ Batch runner for PopulationSim across multiple RegioStar folders.
 Features:
 - Discovers and runs all popsim_regiostar_* folders
 - Optionally splits large runs (by 100m cell count) into sub-runs by 1km cells
+- Parallel execution of multiple PopulationSim runs (default: 3 workers)
+- Auto-resume: skips folders that already have output files
 - Merges results with verification that 100m cells are unique across runs
 - Produces combined final_expanded_household_ids.csv
 
 Usage:
-    uv run batch_run_popsim.py [--max-cells 3000] [--dry-run] [--merge-only]
+    uv run batch_run_popsim.py [--max-cells 3000] [--parallel 3] [--dry-run] [--merge-only]
 """
 
 import argparse
@@ -17,9 +19,28 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+
+# Thread-safe print lock
+print_lock = threading.Lock()
+
+
+def log(message: str, level: str = "INFO"):
+    """Thread-safe logging with timestamp."""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    with print_lock:
+        print(f"[{timestamp}] [{level}] {message}", flush=True)
+
+
+def is_completed(folder: Path) -> bool:
+    """Check if a folder already has completed output."""
+    output_file = folder / "output" / "final_expanded_household_ids.csv"
+    return output_file.exists()
 
 
 def discover_popsim_folders(base_dir: Path) -> list[Path]:
@@ -151,13 +172,22 @@ def split_folder_by_1km(folder: Path, max_cells: int) -> list[Path]:
     return split_folders
 
 
-def run_popsim(folder: Path, dry_run: bool = False) -> bool:
-    """Run PopulationSim for a single folder."""
-    print(f"\nRunning PopulationSim: {folder.name}")
+def run_popsim(folder: Path, dry_run: bool = False) -> tuple[Path, bool, str]:
+    """
+    Run PopulationSim for a single folder.
+
+    Returns: (folder, success, message)
+    """
+    # Check for auto-resume (already completed)
+    if is_completed(folder):
+        log(f"SKIP {folder.name} - output already exists (resume)", "SKIP")
+        return (folder, True, "skipped (already completed)")
+
+    log(f"START {folder.name}", "RUN")
 
     if dry_run:
-        print("  [DRY RUN] Would execute: uv run populationsim -w", folder)
-        return True
+        log(f"DRY RUN {folder.name} - would execute populationsim", "DRY")
+        return (folder, True, "dry run")
 
     try:
         result = subprocess.run(
@@ -169,25 +199,65 @@ def run_popsim(folder: Path, dry_run: bool = False) -> bool:
         )
 
         if result.returncode != 0:
-            print(f"  ERROR: PopulationSim failed with code {result.returncode}")
-            print(f"  stderr: {result.stderr[:500]}")
-            return False
+            log(f"FAIL {folder.name} - exit code {result.returncode}", "ERROR")
+            return (folder, False, f"failed with code {result.returncode}")
 
         # Check if output was created
         output_file = folder / "output" / "final_expanded_household_ids.csv"
         if not output_file.exists():
-            print(f"  ERROR: Output file not created")
-            return False
+            log(f"FAIL {folder.name} - no output file created", "ERROR")
+            return (folder, False, "no output file created")
 
-        print(f"  SUCCESS: Output created")
-        return True
+        log(f"DONE {folder.name}", "OK")
+        return (folder, True, "completed")
 
     except subprocess.TimeoutExpired:
-        print(f"  ERROR: Timeout after 1 hour")
-        return False
+        log(f"FAIL {folder.name} - timeout after 1 hour", "ERROR")
+        return (folder, False, "timeout")
     except Exception as e:
-        print(f"  ERROR: {e}")
-        return False
+        log(f"FAIL {folder.name} - {e}", "ERROR")
+        return (folder, False, str(e))
+
+
+def run_popsim_parallel(folders: list[Path], num_workers: int, dry_run: bool = False) -> tuple[list[Path], list[Path], list[Path]]:
+    """
+    Run PopulationSim for multiple folders in parallel.
+
+    Returns: (successful, failed, skipped)
+    """
+    successful = []
+    failed = []
+    skipped = []
+
+    # Count already completed for progress tracking
+    total = len(folders)
+    completed_count = 0
+
+    log(f"Starting parallel execution with {num_workers} workers", "INFO")
+
+    with ThreadPoolExecutor(max_workers=num_workers) as executor:
+        # Submit all tasks
+        future_to_folder = {
+            executor.submit(run_popsim, folder, dry_run): folder
+            for folder in folders
+        }
+
+        # Process results as they complete
+        for future in as_completed(future_to_folder):
+            folder, success, message = future.result()
+            completed_count += 1
+
+            if "skipped" in message:
+                skipped.append(folder)
+            elif success:
+                successful.append(folder)
+            else:
+                failed.append(folder)
+
+            # Progress update
+            log(f"Progress: {completed_count}/{total} ({len(successful)} done, {len(skipped)} skipped, {len(failed)} failed)", "PROGRESS")
+
+    return successful, failed, skipped
 
 
 def verify_unique_cells(dfs: list[tuple[str, pd.DataFrame]]) -> tuple[bool, list[str]]:
@@ -274,6 +344,10 @@ def main():
         help="Maximum 100m cells per run before splitting (default: 3000)"
     )
     parser.add_argument(
+        "--parallel", "-p", type=int, default=3,
+        help="Number of parallel PopulationSim runs (default: 3)"
+    )
+    parser.add_argument(
         "--dry-run", action="store_true",
         help="Show what would be done without running PopulationSim"
     )
@@ -305,6 +379,7 @@ def main():
     print(f"Base directory: {base_dir}")
     print(f"Output directory: {output_dir}")
     print(f"Max cells per run: {args.max_cells}")
+    print(f"Parallel workers: {args.parallel}")
 
     # Discover folders
     folders = discover_popsim_folders(base_dir)
@@ -329,27 +404,27 @@ def main():
             split_folders = split_folder_by_1km(folder, args.max_cells)
             folders_to_run.extend(split_folders)
 
-    print(f"\nTotal runs to execute: {len(folders_to_run)}")
+    # Count already completed
+    already_completed = sum(1 for f in folders_to_run if is_completed(f))
+    print(f"\nTotal runs: {len(folders_to_run)}")
+    print(f"  Already completed: {already_completed}")
+    print(f"  Remaining: {len(folders_to_run) - already_completed}")
 
     if args.merge_only:
         print("\n--merge-only specified, skipping PopulationSim runs")
     else:
-        # Run PopulationSim for each folder
+        # Run PopulationSim for each folder (in parallel)
         print("\n" + "="*60)
-        print("Running PopulationSim...")
+        print(f"Running PopulationSim ({args.parallel} parallel workers)...")
         print("="*60)
 
-        successful = []
-        failed = []
-
-        for folder in folders_to_run:
-            if run_popsim(folder, args.dry_run):
-                successful.append(folder)
-            else:
-                failed.append(folder)
+        successful, failed, skipped = run_popsim_parallel(
+            folders_to_run, args.parallel, args.dry_run
+        )
 
         print(f"\n\nRun Summary:")
-        print(f"  Successful: {len(successful)}")
+        print(f"  Completed: {len(successful)}")
+        print(f"  Skipped (already done): {len(skipped)}")
         print(f"  Failed: {len(failed)}")
 
         if failed:
