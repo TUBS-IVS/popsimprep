@@ -3,6 +3,14 @@ popsim/data/
 popsim/output/
 popsim/_raw_data/
 
+# User inputs (not tracked)
+inputs/
+archive/
+
+# Generated PopSim folders
+popsim_regiostar_*/
+popsim_combined/
+
 # IDE
 .idea/
 *.iml
